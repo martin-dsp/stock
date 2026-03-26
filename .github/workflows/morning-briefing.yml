@@ -1,0 +1,31 @@
+name: 모닝 브리핑
+
+on:
+  schedule:
+    # 매일 오전 8시 KST = UTC 23:00 (전날)
+    - cron: "0 23 * * 0-4"
+  workflow_dispatch: # 수동 실행 버튼
+
+jobs:
+  run:
+    runs-on: self-hosted
+    steps:
+      - name: 코드 최신화
+        uses: actions/checkout@v4
+
+      - name: 가상환경 생성 (최초 1회만 실제 설치)
+        working-directory: morning-briefing
+        run: |
+          if [ ! -d ".venv" ]; then
+            python3 -m venv .venv
+          fi
+          .venv/bin/pip install -q -r requirements.txt
+
+      - name: 브리핑 실행
+        working-directory: morning-briefing
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: |
+          mkdir -p logs
+          .venv/bin/python main.py
