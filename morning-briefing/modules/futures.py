@@ -1,7 +1,7 @@
-"""야간선물: S&P500·나스닥100 (yfinance) + KOSPI·KOSDAQ 실시간 지수 (네이버 모바일 API)
+"""선물/지수
 
-NOTE: 네이버 금융의 야간선물 전용 페이지(/futr/) URL이 폐지됨.
-      KOSPI200/KOSDAQ150 야간선물 대신 KOSPI/KOSDAQ 현재 지수를 표시.
+- S&P500·나스닥100 선물 (ES=F, NQ=F): 1분봉으로 현재 실시간 가격
+- KOSPI·KOSDAQ: 네이버 모바일 API (8시 기준 전일 종가)
 """
 import time
 import logging
@@ -14,7 +14,7 @@ US_FUTURES = {
 }
 
 KR_INDICES = {
-    "KOSPI": "KOSPI",
+    "KOSPI":  "KOSPI",
     "KOSDAQ": "KOSDAQ",
 }
 
@@ -28,32 +28,40 @@ HEADERS = {
 
 
 def _fetch_us_futures():
+    """1분봉으로 현재 실시간 선물 가격 조회"""
     result = {}
     for name, ticker in US_FUTURES.items():
         try:
-            hist = yf.Ticker(ticker).history(period="2d")
-            if len(hist) >= 2:
-                prev = hist["Close"].iloc[-2]
-                curr = hist["Close"].iloc[-1]
-                change_pct = (curr - prev) / prev * 100
-            elif len(hist) == 1:
-                curr = hist["Close"].iloc[0]
-                change_pct = 0.0
+            t = yf.Ticker(ticker)
+            # 현재가: 1분봉
+            hist_1m = t.history(period="1d", interval="1m")
+            # 전일 종가: 변동률 계산용
+            hist_1d = t.history(period="2d")
+
+            if hist_1m.empty:
+                raise ValueError(f"{ticker} 1분봉 데이터 없음")
+
+            curr = float(hist_1m["Close"].iloc[-1])
+
+            if len(hist_1d) >= 2:
+                prev = float(hist_1d["Close"].iloc[-2])
             else:
-                continue
-            result[name] = {"price": float(curr), "change_pct": float(change_pct)}
-            time.sleep(0.5)
+                prev = curr
+
+            change_pct = (curr - prev) / prev * 100
+            result[name] = {"price": curr, "change_pct": change_pct, "realtime": True}
+            time.sleep(0.3)
         except Exception as e:
             logging.error(f"futures {name} 오류: {e}")
     return result
 
 
 def _fetch_kr_indices():
-    """네이버 모바일 API로 KOSPI/KOSDAQ 실시간 지수 조회"""
+    """네이버 모바일 API로 KOSPI/KOSDAQ 지수 조회 (전일 종가)"""
     result = {}
     for name, code in KR_INDICES.items():
         try:
-            url = f"https://m.stock.naver.com/api/index/{code}/basic"
+            url  = f"https://m.stock.naver.com/api/index/{code}/basic"
             resp = requests.get(url, headers=HEADERS, timeout=10)
             resp.raise_for_status()
             data = resp.json()
@@ -64,6 +72,7 @@ def _fetch_kr_indices():
             result[name] = {
                 "price":      price,
                 "change_pct": float(ratio) if ratio else None,
+                "realtime":   False,
             }
             time.sleep(0.3)
         except Exception as e:
