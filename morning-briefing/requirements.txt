@@ -7,3 +7,4 @@ python-dotenv>=1.0.0
 feedparser>=6.0.11
 lxml>=5.0.0
 deep-translator>=1.11.4
+finance-datareader>=0.9.50
