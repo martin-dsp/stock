@@ -6,7 +6,7 @@
 
 | 프로젝트 | 설명 | 상태 |
 |----------|------|------|
-| [morning-briefing](./morning-briefing/) | 한국 증시 모닝 브리핑 (평일 8시 슬랙 발송) | 🚧 개발 중 |
+| [morning-briefing](./morning-briefing/) | 한국 증시 모닝 브리핑 (평일 8시 슬랙 발송) | ✅ 운영 중 |
 | [ai-news](./ai-news/) | AI 데일리 뉴스 브리핑 (매일 8시 슬랙 발송) | ✅ 운영 중 |
 | [world-news](./world-news/) | 세계 뉴스 데일리 브리핑 (매일 8시 슬랙 발송) | ✅ 운영 중 |
 | [tech-news](./tech-news/) | 테크/HackerNews 데일리 브리핑 (매일 8시 슬랙 발송) | ✅ 운영 중 |
