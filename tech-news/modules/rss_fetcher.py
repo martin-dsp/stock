@@ -35,16 +35,24 @@ def is_duplicate(title: str, seen: list[str], threshold: int = 4) -> bool:
 
 
 def fetch_and_dedupe(sources: list[tuple], limit: int = 10) -> list[dict]:
-    """여러 RSS 소스 수집 → 중복 제거 → limit개 반환"""
-    raw = []
+    """여러 RSS 소스 수집 → 라운드로빈 인터리브 → 중복 제거 → limit개 반환"""
+    buckets = []
     for source, url in sources:
         items = fetch_rss(url, source)
-        raw.extend(items)
+        buckets.append(items)
         time.sleep(0.3)
+
+    # 소스별로 균등하게 섞기 (라운드로빈)
+    interleaved = []
+    max_len = max((len(b) for b in buckets), default=0)
+    for i in range(max_len):
+        for bucket in buckets:
+            if i < len(bucket):
+                interleaved.append(bucket[i])
 
     seen_titles = []
     deduped = []
-    for item in raw:
+    for item in interleaved:
         if not is_duplicate(item["title"], seen_titles):
             seen_titles.append(item["title"])
             deduped.append(item)
