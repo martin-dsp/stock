@@ -1,0 +1,30 @@
+name: AI 뉴스
+
+on:
+  schedule:
+    # 매일 오전 8시 KST = UTC 23:00 (전날)
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: self-hosted
+    steps:
+      - name: 코드 최신화
+        uses: actions/checkout@v4
+
+      - name: 가상환경 생성 (최초 1회만 실제 설치)
+        working-directory: ai-news
+        run: |
+          if [ ! -d ".venv" ]; then
+            python3 -m venv .venv
+          fi
+          .venv/bin/pip install -q -r requirements.txt
+
+      - name: 뉴스 발송
+        working-directory: ai-news
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.AI_NEWS_WEBHOOK_URL }}
+        run: |
+          mkdir -p logs
+          .venv/bin/python main.py
